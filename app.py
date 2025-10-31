@@ -12,6 +12,12 @@ except Exception as e:
 st.title("Streamlit Calculator")
 st.header("Streamlit Calculator")
 
+from typing import Optional
+
+# import evaluation and formatting utilities
+from utils import parser as _parser
+from utils import calculator as _calculator
+
 
 def _init_session_state() -> None:
     """Initialize st.session_state with calculator defaults if missing."""
@@ -39,27 +45,94 @@ def _clear_state() -> None:
 
 
 def _perform_calculation() -> str:
-    """Placeholder calculation function to support operator chaining.
+    """Perform the calculation using session state and persist history.
 
-    For now, this does not perform real arithmetic. It returns a sensible
-    string to allow state transitions for chained operations.
+    Returns the string result (formatted) or a safe fallback string.
     """
     try:
         ss = st.session_state
-        prev = ss.get('previous_value', '')
-        op = ss.get('operator')
-        curr = ss.get('current_input', '0')
+        prev: str = ss.get('previous_value', '')
+        op: Optional[str] = ss.get('operator')
+        curr: str = ss.get('current_input', '0')
 
-        if prev and op:
-            # Trivial passthrough: use current input as the result to allow chaining
+        # If no operator or previous value, treat current input as the result
+        if not op or not prev:
+            # Do not store in history; just ensure display reflects current input
+            ss['display_value'] = curr
+            ss['current_input'] = curr
+            ss['previous_value'] = ""
+            ss['operator'] = None
+            ss['waiting_for_operand'] = True
+            ss['error_state'] = None
             return curr
-        # If no previous/operation, prefer previous if present else current
-        return prev or curr
+
+        # Map UI operator to parser operator for evaluation
+        eval_op = op
+        if op == '×':
+            eval_op = '*'
+        elif op == '÷':
+            eval_op = '/'
+
+        # Build expression for history using UI operator
+        expression = f"{prev} {op} {curr}"
+        # Build expression for evaluation using parser operators
+        eval_expression = f"{prev} {eval_op} {curr}"
+
+        try:
+            result_dec = _parser.evaluate_expression(eval_expression)
+            formatted = _calculator.format_result(result_dec)
+
+            # Append to history
+            try:
+                ss['calculation_history'].append({
+                    'expression': expression,
+                    'result': formatted,
+                })
+            except Exception:
+                # ensure history exists and append
+                ss['calculation_history'] = ss.get('calculation_history', []) + [{
+                    'expression': expression,
+                    'result': formatted,
+                }]
+
+            # Update state for chaining
+            ss['display_value'] = formatted
+            ss['current_input'] = formatted
+            ss['previous_value'] = ""
+            ss['operator'] = None
+            ss['waiting_for_operand'] = True
+            ss['error_state'] = None
+
+            return formatted
+        except ValueError as e:
+            # Calculation error (e.g., division by zero or malformed)
+            try:
+                ss['error_state'] = str(e)
+            except Exception:
+                pass
+            try:
+                ss['display_value'] = 'Error'
+            except Exception:
+                pass
+            try:
+                ss['current_input'] = '0'
+                ss['previous_value'] = ""
+                ss['operator'] = None
+                ss['waiting_for_operand'] = True
+            except Exception:
+                pass
+            try:
+                print('Component:', e)
+            except Exception:
+                pass
+            # Do not append failed calculation to history
+            return '0'
     except Exception as e:
         try:
             print('Component:', e)
         except Exception:
             pass
+        # Best-effort fallback
         return st.session_state.get('current_input', '0')
 
 
@@ -125,8 +198,7 @@ def _handle_digit(digit: str) -> None:
 def _handle_operator(op: str) -> None:
     """Handle operator selection, managing previous_value, operator, and waiting flag.
 
-    If there is a pending operation, invoke _perform_calculation placeholder
-    to enable chaining behavior.
+    If there is a pending operation, invoke _perform_calculation to enable chaining.
     """
     try:
         if op not in {'+', '-', '×', '÷'}:
@@ -143,7 +215,7 @@ def _handle_operator(op: str) -> None:
         else:
             # There is a previous value; if there's an existing operator, perform pending calculation
             if existing_op:
-                # Placeholder call to perform calculation; update previous_value with result
+                # Perform calculation and update previous_value with result
                 result = _perform_calculation()
                 ss['previous_value'] = result
 
@@ -217,6 +289,39 @@ def render_calculator() -> None:
                     except Exception:
                         pass
                     st.session_state['error_state'] = 'operator_click_error'
+
+        # Equals button
+        if st.button('='):
+            try:
+                _perform_calculation()
+            except Exception as e:
+                try:
+                    print('Component:', e)
+                except Exception:
+                    pass
+                st.session_state['error_state'] = 'equals_click_error'
+
+        # Render calculation history if present
+        try:
+            history = st.session_state.get('calculation_history', [])
+            if history:
+                st.write('History')
+                for item in history:
+                    expr = item.get('expression')
+                    res = item.get('result')
+                    try:
+                        st.write(f"{expr} = {res}")
+                    except Exception:
+                        # best-effort: fallback to writing raw item
+                        try:
+                            st.write(item)
+                        except Exception:
+                            pass
+        except Exception as e:
+            try:
+                print('Component:', e)
+            except Exception:
+                pass
 
     except Exception as e:
         # Catch unexpected errors during UI rendering
