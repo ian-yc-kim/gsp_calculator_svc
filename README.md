@@ -1,114 +1,107 @@
-# gsp_calculator_svc
+# Streamlit Calculator Web App
 
-## Overview
+## Description
 
-gsp_calculator_svc is a high-precision calculator service implemented as a Streamlit application. The project follows the Thesen AI mandated technology stack and conventions: Python for implementation, Streamlit for UI, Python's decimal module for precision arithmetic, and Poetry for dependency and build management. This README serves as the project plan and documentation for the calculator-web subsystem.
+Streamlit Calculator Web App is a lightweight Streamlit application that provides high-precision arithmetic operations and a simple, session-persistent calculation history. It is built with Python and managed with Poetry for dependency and environment handling. This README explains how to set up, run, test, and deploy the application.
 
-## Technology Stack
+## Getting Started
 
-- Language: Python (3.11+ recommended)
-- UI Framework: Streamlit
-- Precision arithmetic: Python builtin decimal module
-- Build and dependency management: Poetry
-- Configuration: .env with a Config class in src/gsp_calculator/config.py
-- Deployment: Docker (managed by Thesen AI automation)
+These instructions will get a copy of the project running on your local machine for development and testing purposes.
 
-Legacy technologies that are not used in this project and intentionally removed from documentation:
-- React
-- TypeScript / JavaScript
-- Tailwind CSS
-- decimal.js
-- npm / yarn
-- Vite
+Prerequisites
 
-## Project Structure (documentation-targeted)
+- Python 3.9+ (Python 3.11 recommended)
+- Poetry (for dependency and virtualenv management)
+- Docker (optional, for containerized deployment)
+- Make (optional, for convenience targets provided in Makefile)
 
-The repository is organized to reflect a Python/Streamlit application. Example structure:
+## Installation
 
-- app.py (Streamlit application entrypoint)
-- src/gsp_calculator/
-  - __init__.py
-  - config.py (Config class reading .env)
-  - calculator_engine.py (core arithmetic functions using decimal)
-  - ui.py (Streamlit UI components, if separated)
-- tests/
-  - test_readme_stack.py (example validation test)
-- .env (development configuration; not committed)
+1. Clone the repository:
 
-Note: This README describes the intended module/file paths for clarity. Actual implementation files should follow this structure.
+   git clone <repository-url>
+   cd <repository-directory>
 
-## Feature Overview (Streamlit-focused)
+2. Install Python dependencies using Poetry:
 
-- High-precision basic arithmetic using Python's decimal module (add, subtract, multiply, divide)
-- Minimal, responsive UI implemented with Streamlit components
-- Calculation history using Streamlit session_state for persistence within a user session
-- Keyboard input guidance: Streamlit widgets and session_state can approximate keyboard-driven workflows; exact keybindings depend on Streamlit capabilities and future implementation details
+   poetry install
 
-## Setup and Run Instructions
+3. Create a development .env file if needed (optional):
 
-Prerequisites:
-- Python 3.11+ installed
-- Poetry installed
+   cp .env.example .env
+   # Edit .env as required
 
-Install dependencies:
+Note: The project uses a Config class pattern (e.g., src/gsp_calculator/config.py) to centralize environment configuration.
 
-- poetry install
+## Running the Application
 
-Environment variables and configuration:
+Run locally with Streamlit (development):
 
-- Create a .env file in the project root as needed
-- Implement a Config class in src/gsp_calculator/config.py to centralize configuration reading (use python-dotenv or similar if required)
+poetry run streamlit run app.py
 
-Run the app locally:
+Alternatively, use the provided Makefile convenience target:
 
-- poetry run streamlit run app.py
+make run
 
-## Module and File Reference Mapping
+The app will be available at http://localhost:8501 by default.
 
-Replace legacy TypeScript/React file references with Python module paths. Example mappings:
+## Running Tests
 
-- src/utils/calculatorEngine.ts -> src/gsp_calculator/calculator_engine.py
-- Any .tsx/.tsx/.ts component references -> corresponding .py modules in src/gsp_calculator/
-- Tailwind class references -> Streamlit native layout and styling descriptions
-- npm/yarn/Vite dev/build instructions -> Poetry commands (poetry install, poetry run <cmd>) and Streamlit run
+Run the test suite locally with pytest:
 
-Make sure in-code and documentation examples reference .py paths, not .ts or .tsx files.
+poetry run pytest
 
-## Acceptance Criteria (Documentation)
+Or use the Makefile convenience target:
 
-This README meets the action item acceptance criteria when:
+make test
 
-- The core technology stack is clearly Python + Streamlit
-- All references to React, TypeScript/JavaScript, Tailwind CSS, decimal.js, npm, yarn, and Vite are removed or replaced
-- Poetry is identified as the build and dependency tool
-- Module structure and file paths reflect Python conventions (e.g., calculator_engine.py)
-- Document aligns with Thesen AI constraints and Streamlit capabilities
+Tests verify project components and documentation consistency.
 
-## Consistency Checklist
+## Docker Deployment
 
-Before finalizing documentation, ensure:
+Build a Docker image using the Makefile or Docker directly.
 
-- No occurrences of: React, TypeScript, Tailwind, decimal.js, npm, yarn, Vite
-- All example file paths use .py and Python package structures
-- Build and run instructions use Poetry and Streamlit commands
-- Feature descriptions are framed in Streamlit terminology, not React component language
+Using Makefile:
 
-## Testing / Verification (documentation-only)
+make build-image
+make run-image
 
-A simple README validation test can be added to ensure documentation correctness. Example checks:
+Commands explained:
 
-- README contains: "Streamlit", "Python", "Poetry", "decimal"
-- README does not contain: "React", "TypeScript", "Tailwind", "decimal.js", "npm", "yarn", "Vite"
-- File path examples include "calculator_engine.py" and do not include ".ts" or ".tsx"
+- make build-image: builds a Docker image named calculator-web-streamlit
+- make run-image: runs the built image and exposes port 8501 to host
 
-Example (conceptual) test file path: tests/test_readme_stack.py
+Direct Docker commands:
 
-## Notes and Constraints
+# Build
+docker build -t calculator-web-streamlit .
 
-- This action item is documentation-only. No functional code changes or infrastructure changes are performed here.
-- Follow Thesen AI guidance for configuration management (central Config class reading .env) when implementing actual code later.
+# Run
+docker run -p 8501:8501 calculator-web-streamlit
 
-## Contact / Next Steps
+## Environment and Configuration
 
-- Implement the Streamlit UI and Python modules following the documented structure in future action items.
-- Add README validation unit tests or CI checks if desired.
+- Store runtime configuration in a .env file at the repository root for development.
+- Use src/gsp_calculator/config.py (or similar) to read environment variables.
+- Never commit sensitive credentials to the repository.
+
+## Troubleshooting
+
+- If Streamlit fails to start, check for conflicting processes on port 8501.
+- If dependencies fail to install, ensure Poetry and Python versions match the prerequisites.
+
+## Project Structure (overview)
+
+- app.py - Streamlit application entrypoint
+- src/gsp_calculator/ - package for calculator logic and config
+- tests/ - pytest test suite
+- Makefile - helpful targets for install, run, test, build-image, run-image
+- Dockerfile - container definition for deployment
+
+## Contributing
+
+Contributions are welcome. Please follow repository contribution guidelines and ensure tests pass before submitting PRs.
+
+## License
+
+Specify license information here if applicable.
