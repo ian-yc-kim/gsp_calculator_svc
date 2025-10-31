@@ -38,12 +38,134 @@ def _clear_state() -> None:
     ss['error_state'] = None
 
 
-def render_calculator() -> None:
-    """Render a minimal calculator UI using session state.
+def _perform_calculation() -> str:
+    """Placeholder calculation function to support operator chaining.
 
-    This replaces the legacy text_input and Calculate button with a
-    simple display area and an AC (All Clear) button that resets
-    calculator state.
+    For now, this does not perform real arithmetic. It returns a sensible
+    string to allow state transitions for chained operations.
+    """
+    try:
+        ss = st.session_state
+        prev = ss.get('previous_value', '')
+        op = ss.get('operator')
+        curr = ss.get('current_input', '0')
+
+        if prev and op:
+            # Trivial passthrough: use current input as the result to allow chaining
+            return curr
+        # If no previous/operation, prefer previous if present else current
+        return prev or curr
+    except Exception as e:
+        try:
+            print('Component:', e)
+        except Exception:
+            pass
+        return st.session_state.get('current_input', '0')
+
+
+def _handle_digit(digit: str) -> None:
+    """Handle digit or decimal point input, updating session state.
+
+    Rules:
+    - If waiting_for_operand is True, start a new current_input with the digit.
+    - Prevent multiple decimal points.
+    - Replace leading '0' with a non-zero digit.
+    - Update display_value to reflect current_input.
+    """
+    try:
+        if digit not in {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", '.'}:
+            return
+
+        ss = st.session_state
+
+        # If we are waiting for the next operand, begin a new input
+        if ss.get('waiting_for_operand'):
+            if digit == '.':
+                ss['current_input'] = '0.'
+            else:
+                ss['current_input'] = digit
+            ss['waiting_for_operand'] = False
+            ss['display_value'] = ss['current_input']
+            return
+
+        # Not waiting: append or manage decimal/leading zero rules
+        current = ss.get('current_input', '0')
+
+        if digit == '.':
+            if '.' in current:
+                # ignore additional decimal points
+                return
+            # append decimal point
+            ss['current_input'] = current + '.'
+            ss['display_value'] = ss['current_input']
+            return
+
+        # digit is 0-9
+        if current == '0':
+            # Replace leading zero unless digit is also zero
+            if digit == '0':
+                ss['current_input'] = '0'
+            else:
+                ss['current_input'] = digit
+        else:
+            ss['current_input'] = current + digit
+
+        ss['display_value'] = ss['current_input']
+    except Exception as e:
+        try:
+            print('Component:', e)
+        except Exception:
+            pass
+        try:
+            st.session_state['error_state'] = 'digit_handler_error'
+        except Exception:
+            pass
+
+
+def _handle_operator(op: str) -> None:
+    """Handle operator selection, managing previous_value, operator, and waiting flag.
+
+    If there is a pending operation, invoke _perform_calculation placeholder
+    to enable chaining behavior.
+    """
+    try:
+        if op not in {'+', '-', '×', '÷'}:
+            return
+
+        ss = st.session_state
+        prev = ss.get('previous_value', '')
+        curr = ss.get('current_input', '0')
+        existing_op = ss.get('operator')
+
+        if not prev:
+            # No previous value recorded, set it from current input
+            ss['previous_value'] = curr
+        else:
+            # There is a previous value; if there's an existing operator, perform pending calculation
+            if existing_op:
+                # Placeholder call to perform calculation; update previous_value with result
+                result = _perform_calculation()
+                ss['previous_value'] = result
+
+        ss['operator'] = op
+        ss['waiting_for_operand'] = True
+        # update display to show the previous value (or current if prev absent)
+        ss['display_value'] = ss.get('previous_value') or ss.get('current_input')
+    except Exception as e:
+        try:
+            print('Component:', e)
+        except Exception:
+            pass
+        try:
+            st.session_state['error_state'] = 'operator_handler_error'
+        except Exception:
+            pass
+
+
+def render_calculator() -> None:
+    """Render a minimal calculator UI using session state and wire inputs.
+
+    Buttons for digits and operators call helper handlers to mutate session state.
     """
     try:
         _init_session_state()
@@ -69,6 +191,32 @@ def render_calculator() -> None:
                     pass
                 # set an error state so UI can reflect failure if desired
                 st.session_state['error_state'] = 'failed_to_clear'
+
+        # Digit buttons (arranged in a typical keypad order)
+        digits = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '0', '.']
+        for label in digits:
+            if st.button(label):
+                try:
+                    _handle_digit(label)
+                except Exception as e:
+                    try:
+                        print('Component:', e)
+                    except Exception:
+                        pass
+                    st.session_state['error_state'] = 'digit_click_error'
+
+        # Operator buttons
+        operators = ['+', '-', '×', '÷']
+        for label in operators:
+            if st.button(label):
+                try:
+                    _handle_operator(label)
+                except Exception as e:
+                    try:
+                        print('Component:', e)
+                    except Exception:
+                        pass
+                    st.session_state['error_state'] = 'operator_click_error'
 
     except Exception as e:
         # Catch unexpected errors during UI rendering
