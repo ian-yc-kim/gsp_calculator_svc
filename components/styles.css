@@ -35,10 +35,22 @@ body, #root {
   font-weight: 600 !important;
   padding: 0 14px !important;
   box-sizing: border-box !important;
+  transition: all 120ms ease !important;
 }
 
-/* Function buttons (AC, ±, %) */
-.stButton>button:where([aria-label="AC"], [aria-label="±"], [aria-label="%"]) {
+/* Visual feedback for hover and active (press) states */
+.stButton>button:hover {
+  filter: brightness(1.06) !important;
+  transform: translateY(-1px) !important;
+}
+
+.stButton>button:active {
+  filter: brightness(0.92) !important;
+  transform: translateY(1px) !important;
+}
+
+/* Function buttons (AC, C, ±, %) */
+.stButton>button:where([aria-label="AC"], [aria-label="C"], [aria-label="±"], [aria-label="%"]) {
   background: linear-gradient(180deg, var(--btn-light), var(--btn-dark)) !important;
   color: var(--text-primary) !important;
 }

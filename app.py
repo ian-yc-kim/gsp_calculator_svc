@@ -1,5 +1,6 @@
 import streamlit as st
 from pathlib import Path
+from decimal import Decimal
 
 try:
     st.set_page_config(layout="wide", page_title="Streamlit Calculator")
@@ -67,6 +68,89 @@ def _clear_state() -> None:
     ss['display_value'] = "0"
     ss['calculation_history'] = []
     ss['error_state'] = None
+
+
+def _handle_clear_entry() -> None:
+    """Clear the current entry only (C). Do not modify previous_value/operator."""
+    try:
+        ss = st.session_state
+        ss['current_input'] = "0"
+        ss['display_value'] = "0"
+        # Do not touch previous_value, operator, waiting_for_operand, history, error_state
+    except Exception as e:
+        try:
+            print('Component:', e)
+        except Exception:
+            pass
+        try:
+            ss['error_state'] = 'clear_entry_error'
+        except Exception:
+            pass
+
+
+def _handle_toggle_sign() -> None:
+    """Toggle sign of the current input. Uses Decimal for precise handling."""
+    try:
+        ss = st.session_state
+        curr = ss.get('current_input', '0')
+        try:
+            val = Decimal(curr)
+            toggled = val * Decimal('-1')
+            formatted = _calculator.format_result(toggled)
+            ss['current_input'] = formatted
+            ss['display_value'] = formatted
+            ss['error_state'] = None
+        except Exception as e:
+            # If parsing fails, do not modify current input; set an error state
+            try:
+                ss['error_state'] = 'toggle_sign_invalid_input'
+            except Exception:
+                pass
+            try:
+                print('Component:', e)
+            except Exception:
+                pass
+    except Exception as e:
+        try:
+            print('Component:', e)
+        except Exception:
+            pass
+        try:
+            st.session_state['error_state'] = 'toggle_sign_handler_error'
+        except Exception:
+            pass
+
+
+def _handle_percentage() -> None:
+    """Convert current input to percentage (divide by 100) and format result."""
+    try:
+        ss = st.session_state
+        curr = ss.get('current_input', '0')
+        try:
+            val = Decimal(curr)
+            perc = val / Decimal('100')
+            formatted = _calculator.format_result(perc)
+            ss['current_input'] = formatted
+            ss['display_value'] = formatted
+            ss['error_state'] = None
+        except Exception as e:
+            try:
+                ss['error_state'] = 'percentage_invalid_input'
+            except Exception:
+                pass
+            try:
+                print('Component:', e)
+            except Exception:
+                pass
+    except Exception as e:
+        try:
+            print('Component:', e)
+        except Exception:
+            pass
+        try:
+            st.session_state['error_state'] = 'percentage_handler_error'
+        except Exception:
+            pass
 
 
 def _perform_calculation() -> str:
@@ -286,8 +370,36 @@ def render_calculator() -> None:
 
         # Layout buttons in rows using columns to approximate iOS layout
         try:
+            # First row uses 5 columns to accomodate AC, C, ±, %, ÷
+            first_row = ['AC', 'C', '±', '%', '÷']
+            cols5 = st.columns(5)
+            for i, label in enumerate(first_row):
+                try:
+                    if cols5[i].button(label):
+                        try:
+                            if label == 'AC':
+                                _clear_state()
+                            elif label == 'C':
+                                _handle_clear_entry()
+                            elif label == '±':
+                                _handle_toggle_sign()
+                            elif label == '%':
+                                _handle_percentage()
+                            elif label in {'+', '-', '×', '÷'}:
+                                _handle_operator(label)
+                        except Exception as e:
+                            try:
+                                print('Component:', e)
+                            except Exception:
+                                pass
+                            st.session_state['error_state'] = 'button_click_error'
+                except Exception as e:
+                    try:
+                        print('Component:', e)
+                    except Exception:
+                        pass
+
             rows = [
-                ['AC', '±', '%', '÷'],
                 ['7', '8', '9', '×'],
                 ['4', '5', '6', '-'],
                 ['1', '2', '3', '+'],
@@ -299,32 +411,9 @@ def render_calculator() -> None:
                     try:
                         if cols[i].button(label):
                             try:
-                                if label == 'AC':
-                                    _clear_state()
-                                elif label == '±':
-                                    # toggle sign of current input when possible
-                                    ss = st.session_state
-                                    curr = ss.get('current_input', '0')
-                                    if curr and curr != '0':
-                                        if curr.startswith('-'):
-                                            ss['current_input'] = curr[1:]
-                                        else:
-                                            ss['current_input'] = '-' + curr
-                                        ss['display_value'] = ss['current_input']
-                                elif label == '%':
-                                    # simple percent: divide current input by 100
-                                    ss = st.session_state
-                                    try:
-                                        val = _parser.evaluate_expression(ss.get('current_input', '0') + ' / 100')
-                                        ss['current_input'] = _calculator.format_result(val)
-                                        ss['display_value'] = ss['current_input']
-                                    except Exception:
-                                        # fallback: noop
-                                        pass
-                                elif label in {'+', '-', '×', '÷'}:
+                                if label in {'+', '-', '×', '÷'}:
                                     _handle_operator(label)
                                 else:
-                                    # digits handled here too though digits unlikely in this row
                                     _handle_digit(label)
                             except Exception as e:
                                 try:
