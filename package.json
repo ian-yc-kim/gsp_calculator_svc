@@ -1,0 +1,10 @@
+{
+  "name": "gsp_calculator_svc",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Stub package to satisfy CI npm step for Python-only project",
+  "scripts": {
+    "test:run": "echo 'No frontend tests in this repo' && exit 0",
+    "test": "npm run test:run"
+  }
+}
