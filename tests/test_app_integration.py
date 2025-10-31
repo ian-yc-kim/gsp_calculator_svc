@@ -12,6 +12,7 @@ class FakeStreamlit(types.ModuleType):
         self.titles = []
         self.headers = []
         self.writes = []
+        self.markdowns = []
         # emulate streamlit.session_state as a simple dict
         self.session_state = {}
         # controls for simulating button clicks
@@ -29,6 +30,9 @@ class FakeStreamlit(types.ModuleType):
 
     def write(self, *args, **kwargs):
         self.writes.append((args, kwargs))
+
+    def markdown(self, *args, **kwargs):
+        self.markdowns.append((args, kwargs))
 
     def button(self, label):
         # Simulate click only if label is configured in _click_labels
@@ -108,6 +112,7 @@ def test_display_shows_display_value_on_render(monkeypatch):
     mod.render_calculator()
 
     # ensure the display_value was written to the UI
-    # first write arguments should include the display string '0'
-    found = any('0' in str(arg) for call in fake.writes for arg in call[0])
-    assert found, f"expected '0' in writes but got {fake.writes}"
+    # check both markdowns and writes for the display string '0'
+    found_write = any('0' in str(arg) for call in fake.writes for arg in call[0])
+    found_markdown = any('0' in str(arg) for call in fake.markdowns for arg in call[0])
+    assert found_write or found_markdown, f"expected '0' in writes/markdowns but got writes={fake.writes} markdowns={fake.markdowns}"

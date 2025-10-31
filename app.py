@@ -1,4 +1,5 @@
 import streamlit as st
+from pathlib import Path
 
 try:
     st.set_page_config(layout="wide", page_title="Streamlit Calculator")
@@ -8,9 +9,6 @@ except Exception as e:
         print('Component:', e)
     except Exception:
         pass
-
-st.title("Streamlit Calculator")
-st.header("Streamlit Calculator")
 
 from typing import Optional
 
@@ -30,6 +28,33 @@ def _init_session_state() -> None:
     ss.setdefault('display_value', "0")
     ss.setdefault('calculation_history', [])
     ss.setdefault('error_state', None)
+
+
+def _inject_styles() -> None:
+    """Read components/styles.css and inject into the page via markdown.
+
+    Defensive: swallow any file IO errors and log.
+    """
+    try:
+        base = Path(__file__).parent
+        css_path = base / 'components' / 'styles.css'
+        if css_path.exists():
+            try:
+                css_text = css_path.read_text(encoding='utf-8')
+                st.markdown(f"<style>{css_text}</style>", unsafe_allow_html=True)
+            except Exception as e:
+                try:
+                    print('Component:', e)
+                except Exception:
+                    pass
+        else:
+            # no-op if stylesheet not present
+            pass
+    except Exception as e:
+        try:
+            print('Component:', e)
+        except Exception:
+            pass
 
 
 def _clear_state() -> None:
@@ -241,35 +266,84 @@ def render_calculator() -> None:
     """
     try:
         _init_session_state()
+        _inject_styles()
 
-        # Display area: always show current display_value
+        # Styled Display area: always show current display_value
         try:
-            st.write(st.session_state['display_value'])
+            disp = st.session_state.get('display_value', '0')
+            st.markdown(f"<div class=\"calc-display\">{disp}</div>", unsafe_allow_html=True)
         except Exception as e:
             # Defensive logging similar to existing patterns
             try:
                 print('Component:', e)
             except Exception:
                 pass
-
-        # All Clear button clears the calculator state
-        if st.button('AC'):
+            # fallback to write for compatibility
             try:
-                _clear_state()
-            except Exception as e:
-                try:
-                    print('Component:', e)
-                except Exception:
-                    pass
-                # set an error state so UI can reflect failure if desired
-                st.session_state['error_state'] = 'failed_to_clear'
+                st.write(st.session_state.get('display_value', '0'))
+            except Exception:
+                pass
 
-        # Digit buttons (arranged in a typical keypad order)
-        digits = ['7', '8', '9', '4', '5', '6', '1', '2', '3', '0', '.']
-        for label in digits:
-            if st.button(label):
+        # Layout buttons in rows using columns to approximate iOS layout
+        try:
+            rows = [
+                ['AC', '±', '%', '÷'],
+                ['7', '8', '9', '×'],
+                ['4', '5', '6', '-'],
+                ['1', '2', '3', '+'],
+            ]
+
+            for row in rows:
+                cols = st.columns(4)
+                for i, label in enumerate(row):
+                    try:
+                        if cols[i].button(label):
+                            try:
+                                if label == 'AC':
+                                    _clear_state()
+                                elif label == '±':
+                                    # toggle sign of current input when possible
+                                    ss = st.session_state
+                                    curr = ss.get('current_input', '0')
+                                    if curr and curr != '0':
+                                        if curr.startswith('-'):
+                                            ss['current_input'] = curr[1:]
+                                        else:
+                                            ss['current_input'] = '-' + curr
+                                        ss['display_value'] = ss['current_input']
+                                elif label == '%':
+                                    # simple percent: divide current input by 100
+                                    ss = st.session_state
+                                    try:
+                                        val = _parser.evaluate_expression(ss.get('current_input', '0') + ' / 100')
+                                        ss['current_input'] = _calculator.format_result(val)
+                                        ss['display_value'] = ss['current_input']
+                                    except Exception:
+                                        # fallback: noop
+                                        pass
+                                elif label in {'+', '-', '×', '÷'}:
+                                    _handle_operator(label)
+                                else:
+                                    # digits handled here too though digits unlikely in this row
+                                    _handle_digit(label)
+                            except Exception as e:
+                                try:
+                                    print('Component:', e)
+                                except Exception:
+                                    pass
+                                st.session_state['error_state'] = 'button_click_error'
+                    except Exception as e:
+                        try:
+                            print('Component:', e)
+                        except Exception:
+                            pass
+
+            # Last row: make 0 wide by using three columns ratios
+            cols = st.columns([2, 1, 1])
+            # 0 spans first (wide)
+            if cols[0].button('0'):
                 try:
-                    _handle_digit(label)
+                    _handle_digit('0')
                 except Exception as e:
                     try:
                         print('Component:', e)
@@ -277,29 +351,33 @@ def render_calculator() -> None:
                         pass
                     st.session_state['error_state'] = 'digit_click_error'
 
-        # Operator buttons
-        operators = ['+', '-', '×', '÷']
-        for label in operators:
-            if st.button(label):
+            # dot
+            if cols[1].button('.'):
                 try:
-                    _handle_operator(label)
+                    _handle_digit('.')
                 except Exception as e:
                     try:
                         print('Component:', e)
                     except Exception:
                         pass
-                    st.session_state['error_state'] = 'operator_click_error'
+                    st.session_state['error_state'] = 'digit_click_error'
 
-        # Equals button
-        if st.button('='):
-            try:
-                _perform_calculation()
-            except Exception as e:
+            # equals
+            if cols[2].button('='):
                 try:
-                    print('Component:', e)
-                except Exception:
-                    pass
-                st.session_state['error_state'] = 'equals_click_error'
+                    _perform_calculation()
+                except Exception as e:
+                    try:
+                        print('Component:', e)
+                    except Exception:
+                        pass
+                    st.session_state['error_state'] = 'equals_click_error'
+
+        except Exception as e:
+            try:
+                print('Component:', e)
+            except Exception:
+                pass
 
         # Render calculation history if present
         try:

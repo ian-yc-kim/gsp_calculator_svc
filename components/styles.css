@@ -1,0 +1,72 @@
+:root{
+  --bg: #000000;
+  --panel: #1c1c1e;
+  --btn-dark: #2c2c2e;
+  --btn-light: #505050;
+  --btn-accent: #ff9500; /* orange */
+  --text-primary: #ffffff;
+  --text-secondary: #d1d1d6;
+}
+
+/* Basic page reset for the calculator container */
+body, #root {
+  background: var(--bg) !important;
+  color: var(--text-primary) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+.calc-display{
+  background: transparent;
+  color: var(--text-primary);
+  text-align: right;
+  padding: 28px 16px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace;
+  font-size: clamp(28px, 6vw, 48px);
+  overflow-wrap: anywhere;
+}
+
+/* Streamlit button override selectors - best-effort */
+.stButton>button {
+  width: 100% !important;
+  height: 56px !important;
+  border-radius: 9999px !important;
+  font-size: 1.25rem !important;
+  font-weight: 600 !important;
+  padding: 0 14px !important;
+  box-sizing: border-box !important;
+}
+
+/* Function buttons (AC, ±, %) */
+.stButton>button:where([aria-label="AC"], [aria-label="±"], [aria-label="%"]) {
+  background: linear-gradient(180deg, var(--btn-light), var(--btn-dark)) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Digit buttons */
+.stButton>button:where([aria-label="0"], [aria-label^="1"], [aria-label^="2"], [aria-label^="3"], [aria-label^="4"], [aria-label^="5"], [aria-label^="6"], [aria-label^="7"], [aria-label^="8"], [aria-label^="9"], [aria-label="."]) {
+  background: linear-gradient(180deg, #2b2b2b, #1f1f1f) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Operator buttons */
+.stButton>button:where([aria-label="÷"], [aria-label="×"], [aria-label="-"], [aria-label="+"], [aria-label="="]) {
+  background: var(--btn-accent) !important;
+  color: #fff !important;
+}
+
+/* Make equals a bit brighter */
+.stButton>button:where([aria-label="="]) {
+  background: linear-gradient(180deg, #ffb366, var(--btn-accent)) !important;
+}
+
+@media (max-width: 420px){
+  .stButton>button{
+    height: 52px !important;
+    font-size: 1.0625rem !important;
+  }
+  .calc-display{
+    padding: 18px 12px;
+    font-size: clamp(22px, 9vw, 40px);
+  }
+}

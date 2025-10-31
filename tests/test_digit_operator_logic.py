@@ -12,6 +12,7 @@ class FakeStreamlit(types.ModuleType):
         self.titles = []
         self.headers = []
         self.writes = []
+        self.markdowns = []
         # emulate streamlit.session_state as a simple dict
         self.session_state = {}
         # controls for simulating button clicks
@@ -29,6 +30,9 @@ class FakeStreamlit(types.ModuleType):
 
     def write(self, *args, **kwargs):
         self.writes.append((args, kwargs))
+
+    def markdown(self, *args, **kwargs):
+        self.markdowns.append((args, kwargs))
 
     def button(self, label):
         # Simulate click only if label is configured in _click_labels
