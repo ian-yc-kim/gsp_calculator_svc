@@ -2,7 +2,7 @@
 
 ## Description
 
-Streamlit Calculator Web App is a lightweight Streamlit application that provides high-precision arithmetic operations and a simple, session-persistent calculation history. It is built with Python and managed with Poetry for dependency and environment handling. This README explains how to set up, run, test, and deploy the application.
+Streamlit Calculator Web App is a lightweight Streamlit application that provides high-precision arithmetic operations and a simple, session-persistent calculation history. It is built with Python and managed with Poetry for dependency and environment handling. The UI features an iOS-inspired minimal design with custom CSS styling, a responsive grid layout that adapts to different screen sizes, and enhanced functionality including Clear Entry (C), Toggle Sign (±), and Percentage (%) operations. This README explains how to set up, run, test, and deploy the application.
 
 ## Getting Started
 
