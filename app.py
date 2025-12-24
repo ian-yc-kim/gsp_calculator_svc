@@ -370,7 +370,13 @@ def render_calculator() -> None:
 
         # Layout buttons in rows using columns to approximate iOS layout
         try:
-            # First row uses 5 columns to accomodate AC, C, ±, %, ÷
+            # Note: The calculator's first/top row intentionally uses a 5-column layout
+            # (st.columns(5)) so that both 'AC' (All Clear) and 'C' (Clear Entry)
+            # appear as separate, distinct buttons. Other digit/operator rows use
+            # a 4-column layout (st.columns(4)). This preserves expected behavior:
+            # - 'AC' -> _clear_state() (resets entire session state)
+            # - 'C'  -> _handle_clear_entry() (clears only the current entry/display)
+            # The rest of the labels in this row are '±', '%', and '÷'.
             first_row = ['AC', 'C', '±', '%', '÷']
             cols5 = st.columns(5)
             for i, label in enumerate(first_row):
