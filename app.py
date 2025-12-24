@@ -343,6 +343,123 @@ def _handle_operator(op: str) -> None:
             pass
 
 
+def _handle_backspace() -> None:
+    """Handle backspace keyboard action: remove last char or reset to '0'."""
+    try:
+        ss = st.session_state
+        # If waiting for operand, treat backspace as resetting current input
+        if ss.get('waiting_for_operand'):
+            ss['current_input'] = '0'
+            ss['display_value'] = '0'
+            ss['waiting_for_operand'] = True
+            return
+
+        curr = ss.get('current_input', '0') or '0'
+
+        # If current is '0' or empty, keep '0'
+        if not curr or curr == '0':
+            ss['current_input'] = '0'
+            ss['display_value'] = '0'
+            return
+
+        # Remove last character
+        new = curr[:-1]
+        # If removing leaves empty or just '-', normalize to '0'
+        if not new or new == '-' or len(curr) <= 1:
+            new = '0'
+
+        ss['current_input'] = new
+        ss['display_value'] = new
+    except Exception as e:
+        try:
+            print('Component:', e)
+        except Exception:
+            pass
+        try:
+            st.session_state['error_state'] = 'backspace_handler_error'
+        except Exception:
+            pass
+
+
+def _inject_keyboard_handlers() -> None:
+    """Inject JavaScript to map physical keyboard events to existing buttons.
+
+    Defensive: swallow any errors when Streamlit components are not available (tests).
+    """
+    try:
+        # Import components in a try to avoid test failures when fake streamlit lacks components
+        import streamlit.components.v1 as components
+
+        js = r"""
+(function(){
+  try{
+    if (window.__calcKbInstalled) return; window.__calcKbInstalled = true;
+    function findButtonByLabel(label){
+      try{
+        // try aria-label first
+        var q = document.querySelector('[aria-label="' + label + '"]');
+        if(q) return q;
+        // fallback: search all buttons for trimmed innerText match
+        var btns = document.querySelectorAll('button');
+        for(var i=0;i<btns.length;i++){
+          try{
+            var text = (btns[i].innerText || btns[i].textContent || '').trim();
+            if(text === label) return btns[i];
+          }catch(e){}
+        }
+      }catch(e){}
+      return null;
+    }
+
+    window.addEventListener('keydown', function(ev){
+      try{
+        var key = ev.key;
+        var handled = false;
+        if(/^[0-9]$/.test(key)){
+          var b = findButtonByLabel(key);
+          if(b){ b.click(); handled = true; }
+        } else if(key === '.'){
+          var b = findButtonByLabel('.'); if(b){ b.click(); handled = true; }
+        } else if(key === '+' || key === '-'){
+          var b = findButtonByLabel(key);
+          if(b){ b.click(); handled = true; }
+        } else if(key === '*'){
+          var b = findButtonByLabel('×'); if(b){ b.click(); handled = true; }
+        } else if(key === '/'){
+          var b = findButtonByLabel('÷'); if(b){ b.click(); handled = true; }
+        } else if(key === 'Enter'){
+          var b = findButtonByLabel('='); if(b){ b.click(); handled = true; }
+        } else if(key === 'Escape'){
+          var b = findButtonByLabel('C'); if(b){ b.click(); handled = true; }
+        } else if(key === 'Backspace'){
+          var b = findButtonByLabel('⌫'); if(b){ b.click(); handled = true; }
+        }
+        if(handled){
+          try{ ev.preventDefault(); }catch(e){}
+        }
+      }catch(e){
+        // Avoid spamming console
+        console.error('Component:', e);
+      }
+    }, true);
+  }catch(e){ console.error('Component:', e); }
+})();
+"""
+        # render invisible html so it mounts and registers handlers; height 0 to be unobtrusive
+        try:
+            components.html(f"<script>{js}</script>", height=0)
+        except Exception as e:
+            try:
+                print('Component:', e)
+            except Exception:
+                pass
+    except Exception as e:
+        try:
+            print('Component:', e)
+        except Exception:
+            pass
+
+
 def render_calculator() -> None:
     """Render a minimal calculator UI using session state and wire inputs.
 
@@ -351,6 +468,8 @@ def render_calculator() -> None:
     try:
         _init_session_state()
         _inject_styles()
+        # Ensure keyboard handlers are injected so physical keys map to UI buttons
+        _inject_keyboard_handlers()
 
         # Styled Display area: always show current display_value
         try:
@@ -365,6 +484,25 @@ def render_calculator() -> None:
             # fallback to write for compatibility
             try:
                 st.write(st.session_state.get('display_value', '0'))
+            except Exception:
+                pass
+
+        # Hidden backspace button to be clicked by injected JS
+        try:
+            # This button is hidden via CSS but exists in DOM so JS can click it.
+            try:
+                if st.button('⌫'):
+                    _handle_backspace()
+            except Exception:
+                # If columns API used in test fake, fallback to module-level button
+                try:
+                    if getattr(st, 'button', lambda x: False)('⌫'):
+                        _handle_backspace()
+                except Exception:
+                    pass
+        except Exception as e:
+            try:
+                print('Component:', e)
             except Exception:
                 pass
 

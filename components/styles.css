@@ -72,6 +72,11 @@ body, #root {
   background: linear-gradient(180deg, #ffb366, var(--btn-accent)) !important;
 }
 
+/* Hide the hidden backspace button used by keyboard JS */
+.stButton>button:where([aria-label="⌫"]) {
+  display: none !important;
+}
+
 @media (max-width: 420px){
   .stButton>button{
     height: 52px !important;
