@@ -96,3 +96,44 @@ def test_backspace_negative_edge_case():
     # Removing last char leaves '-' -> normalize to '0'
     assert ss.get('current_input') == '0'
     assert ss.get('display_value') == '0'
+
+
+def test_inject_keyboard_handlers_includes_percent_key():
+    # Prepare fake streamlit and fake components to capture injected HTML/JS
+    fake = FakeStreamlit()
+
+    # Create a fake components.v1 module with html function capturing content
+    captured = {}
+    comp_pkg = types.ModuleType('streamlit.components')
+    comp_v1 = types.ModuleType('streamlit.components.v1')
+
+    def html_func(content, height=0):
+        # store the injected content so test can inspect it
+        captured['html'] = content
+        return None
+
+    comp_v1.html = html_func
+
+    # Insert into sys.modules so import inside _inject_keyboard_handlers works
+    sys.modules['streamlit'] = fake
+    sys.modules['streamlit.components'] = comp_pkg
+    sys.modules['streamlit.components.v1'] = comp_v1
+
+    # Import app and call injector
+    if 'app' in sys.modules:
+        del sys.modules['app']
+    app = importlib.import_module('app')
+
+    # Call the injection function which should use our fake components.html
+    app._inject_keyboard_handlers()
+
+    # Ensure something was injected
+    assert 'html' in captured and isinstance(captured['html'], str)
+
+    js = captured['html']
+    # Check that percent key branch exists
+    assert "key === '%'" in js
+    # Check that findButtonByLabel is referenced so aria-label support is used
+    assert 'findButtonByLabel' in js
+    # Check the event listener is added
+    assert 'window.addEventListener' in js

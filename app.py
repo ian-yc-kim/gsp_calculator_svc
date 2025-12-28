@@ -467,6 +467,8 @@ def _inject_keyboard_handlers() -> None:
           var b = findButtonByLabel('×'); if(b){ b.click(); handled = true; }
         } else if(key === '/'){
           var b = findButtonByLabel('÷'); if(b){ b.click(); handled = true; }
+        } else if(key === '%'){
+          var b = findButtonByLabel('%'); if(b){ b.click(); handled = true; }
         } else if(key === 'Enter'){
           var b = findButtonByLabel('='); if(b){ b.click(); handled = true; }
         } else if(key === 'Escape'){
@@ -514,7 +516,7 @@ def render_calculator() -> None:
         # Styled Display area: always show current display_value
         try:
             disp = st.session_state.get('display_value', '0')
-            st.markdown(f"<div class=\"calc-display\">{disp}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class=\\"calc-display\\">{disp}</div>", unsafe_allow_html=True)
         except Exception as e:
             # Defensive logging similar to existing patterns
             try:
