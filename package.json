@@ -4,6 +4,7 @@
   "private": true,
   "description": "Stub package to satisfy CI npm step for Python-only project",
   "scripts": {
+    "build": "echo 'No build step required for Streamlit app'",
     "test:run": "echo 'No frontend tests in this repo' && exit 0",
     "test": "npm run test:run"
   }
