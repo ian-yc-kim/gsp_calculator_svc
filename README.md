@@ -98,6 +98,27 @@ docker run -p 8501:8501 calculator-web-streamlit
 - Makefile - helpful targets for install, run, test, build-image, run-image
 - Dockerfile - container definition for deployment
 
+## Keyboard Shortcuts
+
+This application supports physical keyboard input that maps to calculator buttons when the calculator page is focused. Use the following mappings to operate the calculator from your keyboard.
+
+| Key | Calculator Button | Function |
+|-----|-------------------|----------|
+| 0–9 | 0–9 | Digit input |
+| . | . | Decimal point |
+| + | + | Add |
+| - | - | Subtract |
+| * (often Shift+8) | × | Multiply |
+| / | ÷ | Divide |
+| Enter | = | Equals (evaluate current expression) |
+| Escape (Esc) | C | Clear Entry (clears current input) |
+| Backspace | ⌫ | Delete last digit (backspace) |
+
+Notes:
+- Multiplication uses the `*` key on the keyboard; many keyboards require Shift+8 to produce `*`.
+- Keyboard shortcuts work when the calculator page/tab is focused in the browser.
+- `Esc` maps to Clear Entry (C) rather than All Clear (AC).
+
 ## Contributing
 
 Contributions are welcome. Please follow repository contribution guidelines and ensure tests pass before submitting PRs.

@@ -13,6 +13,7 @@ def test_readme_contains_required_sections_and_commands():
         "Running the Application",
         "Running Tests",
         "Docker Deployment",
+        "Keyboard Shortcuts",
     ]
     for header in required_headers:
         assert header in text, f"Missing README section: {header}"
@@ -27,6 +28,13 @@ def test_readme_contains_required_sections_and_commands():
         "make build-image",
         "make run-image",
         "Streamlit Calculator Web App",
+        # Keyboard-related keywords to ensure documentation of shortcuts
+        "Enter",
+        "Escape",
+        "Backspace",
+        "×",
+        "÷",
+        "C",
     ]
     for cmd in required_commands:
         assert cmd in text, f"Missing README command or string: {cmd}"
