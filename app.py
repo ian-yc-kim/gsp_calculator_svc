@@ -11,7 +11,7 @@ except Exception as e:
     except Exception:
         pass
 
-from typing import Optional
+from typing import Optional, Iterable, List
 
 # import evaluation and formatting utilities
 from utils import parser as _parser
@@ -58,6 +58,44 @@ def _inject_styles() -> None:
             pass
 
 
+def _safe_columns(spec) -> List[object]:
+    """Safe wrapper for st.columns to support FakeStreamlit used in tests.
+
+    If streamlit provides columns, delegate. Otherwise return a list of
+    lightweight proxies exposing button(label) which call st.button(label).
+    """
+    try:
+        if hasattr(st, 'columns'):
+            return st.columns(spec)
+    except Exception:
+        # fall through to proxy creation
+        pass
+
+    # Create proxy objects with button method delegating to st.button
+    class _ColProxy:
+        def button(self, label):
+            try:
+                return st.button(label)
+            except Exception:
+                # If st lacks button, be defensive and return False
+                return False
+
+    # Determine count from spec
+    count = 0
+    if isinstance(spec, int):
+        count = spec
+    elif isinstance(spec, (list, tuple)):
+        count = len(spec)
+    else:
+        # fallback: attempt to coerce to int
+        try:
+            count = int(spec)
+        except Exception:
+            count = 1
+
+    return [_ColProxy() for _ in range(count)]
+
+
 def _clear_state() -> None:
     """Reset all calculator session state variables to initial defaults."""
     ss = st.session_state
@@ -89,19 +127,20 @@ def _handle_clear_entry() -> None:
 
 
 def _handle_toggle_sign() -> None:
-    """Toggle sign of the current input. Uses Decimal for precise handling."""
+    """Toggle sign of the current input using utils.calculator.toggle_sign."""
     try:
         ss = st.session_state
         curr = ss.get('current_input', '0')
         try:
             val = Decimal(curr)
-            toggled = val * Decimal('-1')
+            # Delegate sign toggle to calculator utils
+            toggled = _calculator.toggle_sign(val)
             formatted = _calculator.format_result(toggled)
             ss['current_input'] = formatted
             ss['display_value'] = formatted
             ss['error_state'] = None
         except Exception as e:
-            # If parsing fails, do not modify current input; set an error state
+            # If parsing or calculator util fails, do not modify current input; set an error state
             try:
                 ss['error_state'] = 'toggle_sign_invalid_input'
             except Exception:
@@ -122,13 +161,14 @@ def _handle_toggle_sign() -> None:
 
 
 def _handle_percentage() -> None:
-    """Convert current input to percentage (divide by 100) and format result."""
+    """Convert current input to percentage using utils.calculator.calculate_percentage."""
     try:
         ss = st.session_state
         curr = ss.get('current_input', '0')
         try:
             val = Decimal(curr)
-            perc = val / Decimal('100')
+            # Delegate percentage calculation to calculator utils
+            perc = _calculator.calculate_percentage(val)
             formatted = _calculator.format_result(perc)
             ss['current_input'] = formatted
             ss['display_value'] = formatted
@@ -516,7 +556,7 @@ def render_calculator() -> None:
             # - 'C'  -> _handle_clear_entry() (clears only the current entry/display)
             # The rest of the labels in this row are '±', '%', and '÷'.
             first_row = ['AC', 'C', '±', '%', '÷']
-            cols5 = st.columns(5)
+            cols5 = _safe_columns(5)
             for i, label in enumerate(first_row):
                 try:
                     if cols5[i].button(label):
@@ -550,7 +590,7 @@ def render_calculator() -> None:
             ]
 
             for row in rows:
-                cols = st.columns(4)
+                cols = _safe_columns(4)
                 for i, label in enumerate(row):
                     try:
                         if cols[i].button(label):
@@ -572,7 +612,7 @@ def render_calculator() -> None:
                             pass
 
             # Last row: make 0 wide by using three columns ratios
-            cols = st.columns([2, 1, 1])
+            cols = _safe_columns([2, 1, 1])
             # 0 spans first (wide)
             if cols[0].button('0'):
                 try:
