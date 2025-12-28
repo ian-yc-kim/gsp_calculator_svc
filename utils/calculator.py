@@ -1,7 +1,7 @@
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Final
 
-__all__ = ["add", "subtract", "multiply", "divide", "format_result"]
+__all__ = ["add", "subtract", "multiply", "divide", "format_result", "toggle_sign", "calculate_percentage"]
 
 
 def add(a: Decimal, b: Decimal) -> Decimal:
@@ -71,3 +71,23 @@ def format_result(value: Decimal, precision: int = 2) -> str:
         pass
 
     return s
+
+
+def toggle_sign(a: Decimal) -> Decimal:
+    """Return the value with its sign inverted.
+
+    Raises TypeError if input is not a Decimal.
+    """
+    if not isinstance(a, Decimal):
+        raise TypeError("toggle_sign expects a Decimal argument")
+    return a * Decimal("-1")
+
+
+def calculate_percentage(a: Decimal) -> Decimal:
+    """Return the value divided by 100 (percentage conversion).
+
+    Raises TypeError if input is not a Decimal.
+    """
+    if not isinstance(a, Decimal):
+        raise TypeError("calculate_percentage expects a Decimal argument")
+    return a / Decimal("100")
