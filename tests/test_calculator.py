@@ -131,3 +131,49 @@ def test_calculate_percentage_invalid_inputs():
         calculate_percentage(1)
     with pytest.raises(TypeError):
         calculate_percentage("1")
+
+
+# Additional tests for scientific notation formatting
+def test_scientific_large_positive():
+    out = format_result(Decimal('1e20'))
+    assert 'e' in out
+    assert out == '1e+20'
+
+
+def test_scientific_small_positive():
+    out = format_result(Decimal('1e-20'))
+    assert 'e' in out
+    assert out == '1e-20'
+
+
+def test_scientific_large_negative():
+    out = format_result(Decimal('-2.5e20'))
+    # Should preserve mantissa and exponent
+    assert out.startswith('-2.5')
+    assert 'e+20' in out
+
+
+def test_threshold_boundaries():
+    # exactly at large threshold -> scientific
+    assert 'e' in format_result(Decimal('1e12'))
+    # just below threshold -> not scientific
+    normal = format_result(Decimal('999999999999'))
+    assert 'e' not in normal
+
+    # exactly at small threshold -> scientific
+    assert 'e' in format_result(Decimal('1e-9'))
+    # just above small threshold -> not scientific
+    assert 'e' not in format_result(Decimal('1.1e-9'))
+    # additional edge: 9.9e-10 should be in scientific notation (<= 1e-9)
+    assert 'e' in format_result(Decimal('9.9e-10'))
+
+
+def test_zero_and_negative_zero_normalized():
+    assert format_result(Decimal('0')) == '0'
+    assert format_result(Decimal('-0.000')) == '0'
+
+
+def test_scientific_length_constraint():
+    out = format_result(Decimal('9.999999999999999e123'))
+    assert 'e' in out
+    assert len(out) <= 15
