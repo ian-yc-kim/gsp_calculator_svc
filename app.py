@@ -17,6 +17,9 @@ from typing import Optional, Iterable, List
 from utils import parser as _parser
 from utils import calculator as _calculator
 
+# Maximum number of history entries to keep in session state
+HISTORY_LIMIT = 50
+
 
 def _init_session_state() -> None:
     """Initialize st.session_state with calculator defaults if missing."""
@@ -243,6 +246,20 @@ def _perform_calculation() -> str:
                     'expression': expression,
                     'result': formatted,
                 }]
+
+            # Enforce history size limit, keep most recent entries
+            try:
+                history = ss.get('calculation_history', [])
+                if len(history) > HISTORY_LIMIT:
+                    # keep the newest HISTORY_LIMIT entries
+                    ss['calculation_history'] = history[-HISTORY_LIMIT:]
+            except Exception:
+                # defensive fallback: coerce slicing
+                try:
+                    ss['calculation_history'] = list(ss.get('calculation_history', []))[-HISTORY_LIMIT:]
+                except Exception:
+                    # give up silently but keep app running
+                    pass
 
             # Update state for chaining
             ss['display_value'] = formatted

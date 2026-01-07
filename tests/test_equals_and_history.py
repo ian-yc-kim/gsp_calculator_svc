@@ -131,3 +131,28 @@ def test_equals_without_prior_operator_displays_current_input():
     ss = fake.session_state
     assert ss.get('display_value') == '0'
     assert ss.get('calculation_history') == []
+
+
+def test_history_limit_enforced():
+    fake = FakeStreamlit()
+    app = _fresh_import_app(fake)
+    # Ensure session state initialized
+    app._init_session_state()
+    ss = fake.session_state
+
+    # Simulate 55 successful calculations of the form i + 1
+    for i in range(55):
+        ss['previous_value'] = str(i)
+        ss['operator'] = '+'
+        ss['current_input'] = '1'
+        # perform calculation directly
+        app._perform_calculation()
+
+    history = ss.get('calculation_history', [])
+    # Ensure the history is trimmed to the HISTORY_LIMIT (50)
+    assert len(history) == 50
+    expressions = [item.get('expression') for item in history]
+    # Oldest 5 (0..4) should be gone; first should be '5 + 1'
+    assert '0 + 1' not in expressions
+    assert expressions[0] == '5 + 1'
+    assert expressions[-1] == '54 + 1'
