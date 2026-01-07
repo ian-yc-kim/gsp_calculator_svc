@@ -4,6 +4,13 @@
 
 Streamlit Calculator Web App is a lightweight Streamlit application that provides high-precision arithmetic operations and a simple, session-persistent calculation history. It is built with Python and managed with Poetry for dependency and environment handling. The UI features an iOS-inspired minimal design with custom CSS styling, a responsive grid layout that adapts to different screen sizes, and enhanced functionality including Clear Entry (C), Toggle Sign (±), and Percentage (%) operations. This README explains how to set up, run, test, and deploy the application.
 
+## Features
+
+- Calculation History: Tracks the last 50 calculations in session persistence so you can review recent results.
+- All Clear (AC): Clears the current calculation and also clears the stored calculation history.
+- Clear Entry (C): Clears the current input without removing stored history (Esc maps to C).
+- High-precision arithmetic: Uses Decimal-based utilities for accurate calculations.
+
 ## Getting Started
 
 These instructions will get a copy of the project running on your local machine for development and testing purposes.
