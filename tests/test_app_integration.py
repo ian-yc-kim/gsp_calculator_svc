@@ -116,3 +116,26 @@ def test_display_shows_display_value_on_render(monkeypatch):
     found_write = any('0' in str(arg) for call in fake.writes for arg in call[0])
     found_markdown = any('0' in str(arg) for call in fake.markdowns for arg in call[0])
     assert found_write or found_markdown, f"expected '0' in writes/markdowns but got writes={fake.writes} markdowns={fake.markdowns}"
+
+
+def test_display_uses_small_class_for_long_values(monkeypatch):
+    fake = FakeStreamlit()
+    # set a long display value (20 chars) to force smallest class
+    fake.session_state['display_value'] = '12345678901234567890'
+    monkeypatch.setitem(sys.modules, 'streamlit', fake)
+
+    mod = importlib.import_module('app')
+    mod.render_calculator()
+
+    # Search captured markdown calls for the expected CSS class
+    found = False
+    for call in fake.markdowns:
+        args = call[0]
+        for a in args:
+            if isinstance(a, str) and 'calc-display-sm' in a:
+                found = True
+                break
+        if found:
+            break
+
+    assert found, f"expected calc-display-sm in markdowns but got {fake.markdowns}"

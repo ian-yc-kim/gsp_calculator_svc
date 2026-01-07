@@ -516,7 +516,24 @@ def render_calculator() -> None:
         # Styled Display area: always show current display_value
         try:
             disp = st.session_state.get('display_value', '0')
-            st.markdown(f"<div class=\\"calc-display\\">{disp}</div>", unsafe_allow_html=True)
+            # Safely convert to string and pick a CSS modifier based on length
+            try:
+                disp_str = str(disp)
+            except Exception:
+                disp_str = '0'
+            try:
+                n = len(disp_str)
+            except Exception:
+                n = 0
+
+            # Determine class: base, medium, or small for long values
+            cls = 'calc-display'
+            if n > 18:
+                cls = 'calc-display calc-display-sm'
+            elif n > 12:
+                cls = 'calc-display calc-display-md'
+
+            st.markdown(f"<div class=\\"{cls}\\">{disp_str}</div>", unsafe_allow_html=True)
         except Exception as e:
             # Defensive logging similar to existing patterns
             try:

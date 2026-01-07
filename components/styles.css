@@ -26,6 +26,27 @@ body, #root {
   overflow-wrap: anywhere;
 }
 
+/* Modifier for medium length numbers */
+.calc-display-md{
+  /* slightly smaller to accommodate longer numbers */
+  font-size: clamp(20px, 5.5vw, 40px);
+  /* Prevent horizontal overflow while keeping text aligned right */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  max-width: 100%;
+}
+
+/* Modifier for very long numbers */
+.calc-display-sm{
+  /* smallest readable size for very long values */
+  font-size: clamp(16px, 4.5vw, 28px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  max-width: 100%;
+}
+
 /* Streamlit button override selectors - best-effort */
 .stButton>button {
   width: 100% !important;
