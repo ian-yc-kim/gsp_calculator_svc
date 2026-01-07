@@ -1,6 +1,7 @@
 import streamlit as st
 from pathlib import Path
 from decimal import Decimal
+from html import escape
 
 try:
     st.set_page_config(layout="wide", page_title="Streamlit Calculator")
@@ -19,6 +20,8 @@ from utils import calculator as _calculator
 
 # Maximum number of history entries to keep in session state
 HISTORY_LIMIT = 50
+# How many history items to display in the UI
+HISTORY_DISPLAY = 5
 
 
 def _init_session_state() -> None:
@@ -530,6 +533,30 @@ def render_calculator() -> None:
         # Ensure keyboard handlers are injected so physical keys map to UI buttons
         _inject_keyboard_handlers()
 
+        # Render calculation history above the main display
+        try:
+            history = st.session_state.get('calculation_history', [])
+            if history:
+                try:
+                    # show most recent HISTORY_DISPLAY items
+                    recent = history[-HISTORY_DISPLAY:]
+                    items_html = ''.join(
+                        f"<div class=\"calc-history-item\">{escape(str(item.get('expression','')))} = {escape(str(item.get('result','')))}</div>"
+                        for item in recent
+                    )
+                    html_block = f"<div class=\"calc-history-container\">{items_html}</div>"
+                    st.markdown(html_block, unsafe_allow_html=True)
+                except Exception as e:
+                    try:
+                        print('Component:', e)
+                    except Exception:
+                        pass
+        except Exception as e:
+            try:
+                print('Component:', e)
+            except Exception:
+                pass
+
         # Styled Display area: always show current display_value
         try:
             disp = st.session_state.get('display_value', '0')
@@ -682,28 +709,6 @@ def render_calculator() -> None:
                         pass
                     st.session_state['error_state'] = 'equals_click_error'
 
-        except Exception as e:
-            try:
-                print('Component:', e)
-            except Exception:
-                pass
-
-        # Render calculation history if present
-        try:
-            history = st.session_state.get('calculation_history', [])
-            if history:
-                st.write('History')
-                for item in history:
-                    expr = item.get('expression')
-                    res = item.get('result')
-                    try:
-                        st.write(f"{expr} = {res}")
-                    except Exception:
-                        # best-effort: fallback to writing raw item
-                        try:
-                            st.write(item)
-                        except Exception:
-                            pass
         except Exception as e:
             try:
                 print('Component:', e)
